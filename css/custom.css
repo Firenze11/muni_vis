@@ -1,16 +1,10 @@
-body{
-    background: #666667;
-    font-family: 'Titillium Web', sans-serif;
-    /*font-family: monospace; /**********/
-}
+/*body{*/
+    /*background: #666667;*/
+    /*font-family: 'Titillium Web', sans-serif;*/
+    /*!*font-family: monospace; !**********!*/
+/*}*/
 
 /* 7 fond properties https://css-tricks.com/almanac/properties/f/font/ */
-#header{
-    font: extra-expanded normal normal bold 54px normal monospace; /**********/
-    font-family: 'Righteous', sans-serif;
-    color: #ffff66;
-    margin: 4px 0px;
-}
 
 #control, #all_maps{
     color: #cccccc;

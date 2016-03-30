@@ -1,37 +1,70 @@
-MapVis = function(_parentElement, _data, _neighborhood, _eventHandler){
+MapVis = function(_parentElement, _data, _routeConfig, _neighborhood){
     this.parentElement = _parentElement;
     this.data = _data;
+    this.routeConfig = _routeConfig;
     this.neighborhood = _neighborhood;
-    this.eventHandler = _eventHandler;
 
     L.mapbox.accessToken = 'pk.eyJ1IjoibGV6aGlsaSIsImEiOiIwZTc1YTlkOTE1ZWIzYzNiNDdiOTYwMDkxM2U1ZmY0NyJ9.SDXoQBpQys6AdTEQ9OhnpQ';
 
-    this.map = L.mapbox.map($('#'+ this.parentElement)[0], 'mapbox.dark', {
+    this.map = L.mapbox.map($('#'+ this.parentElement)[0], 'mapbox.light', {
                   zoomControl: false
                 })
                 .setView([37.767394, -122.447354], 13);
-
     this.initVis();
 };
+
 
 MapVis.prototype.initVis = function(){
     var that = this;
 
+    this.stops = [];
+    this.paths = [];
+    this.routeConfig.forEach( function(d) {
+        d.stop.forEach(function(e){
+            var stop = L.circle(
+                [+e.lat, +e.lon], 10,
+                {color: "#"+d.color,
+                    weight: 0.5,
+                    opacity: 0.3,
+                    className: "stop Rt"+d.tag
+                }).addTo(that.map);
+
+            that.stops.push(stop);
+        });
+        d.path.forEach( function(e) {
+            var coorList = e.point.map( function(f) {
+                return [+f.lat, +f.lon];
+            });
+            var path = L.polyline(
+                coorList,
+                {color: "#"+d.color, opacity: 0.3, weight: 0.5, className: "route Rt"+d.tag}
+            ).addTo(that.map);
+
+            that.paths.push(path);
+        })
+    });
+
     this.svg = d3.select(this.map.getPanes().overlayPane).append("svg");
     this.g = this.svg.append("g").attr("class", "leaflet-zoom-hide");
 
-    //this.tip = d3.tip().attr('class', 'd3-tip').html(function(d) { return d; });
-    //this.svg.call(this.tip);
+    this.locSymbol= function(_s) {
+        return "M" +(-17.32*_s) +"," +(-30*_s) +
+                " C" + (-17.32*_s) + "," + (-60*_s) + " "+
+                       (17.32*_s) + "," + (-60*_s) + " "+
+                       (17.32*_s) + "," + (-30*_s) + " L0,0Z";
+    };
+    this.dirSymbol= function(_s) {
+        return "M" +(-5*_s) +"," +(5*_s) +
+            " L" + (0*_s) + "," + (-10*_s) +
+            " L" + (5*_s) + "," + (5*_s) + //" Z";
+            " L" + (-5*_s) + "," + (5*_s);
+    };
 
-    // default
-    //this.filterfunc = function(_) { return true; };;
-
-    this.wrangleData(); // filter, aggregate, modify data
-    this.updateVis(true); // call the update method
+    this.wrangleData(true);
+    this.updateVis(true);
 };
 
 MapVis.prototype.updateVis = function(_fresh){
-    console.log('updating', this.data.length);
     var that = this;
 
     this.transform = d3.geo.transform({point: projectPoint}); //d3.geo.transform(methods): Creates a new stream transform using the specified hash of methods. The hash may contain implementations of any of the standard stream listener methods: sphere, point, lineStart, lineEnd, polygonStart and polygonStartonEnd
@@ -40,39 +73,49 @@ MapVis.prototype.updateVis = function(_fresh){
 
     this.nbhPaths= this.g.selectAll(".neighborhood")
         .data(this.neighborhood.features);
-    //console.log(nbhPaths.enter()[0].length, nbhPaths[0].length, nbhPaths.exit()[0].length);
+
     this.nbhPaths.enter()
         .append('path')
             .attr("class", "neighborhood");
 
     this.picCircles = this.g.selectAll(".vehicle")
         .data(this.data, function(d) { return d.id; });
-    //console.log(this.picCircles.enter()[0].length, this.picCircles[0].length, this.picCircles.exit()[0].length);
 
     this.picCircles.transition().ease("linear").duration(1000)
         .attr("transform", function(d) {
             var pos = that.map.latLngToLayerPoint(new L.LatLng(d.lat, d.lon));
             return "translate(" + pos.x + ',' + pos.y + ")";
         });
+    this.picCircles.select(".veh_dir")
+        .transition().ease("linear").duration(1000)
+        .attr("transform", function(d) {
+            return "translate(0,-16) rotate(" + d.heading + ") ";
+        });
 
-    this.picCircles.enter()
-        .append("g")
+
+    var circleEnter = this.picCircles.enter()
+            .append("g")
             .attr("class", function(d) { return "vehicle Rt"+ d.routeTag; })
             .interrupt()
             .attr("transform", function(d) {
                 var pos = that.map.latLngToLayerPoint(new L.LatLng(d.lat, d.lon));
                 return "translate(" + pos.x + ',' + pos.y + ")";
             })
-        .append("circle")
-            .attr("r", 7)
-            //.attr('title', function(d) { return d.lat; })
-            //.style("fill", function(d) { return '#ffff00';})//return that.c20b(d.label); })
-            //.style('opacity', 0.7)
+            .on('mouseover', function(d) {
+                this.parentElement.appendChild(this);
+            });
+
+    circleEnter
+        .append("path")
+        .attr("class", "veh_loc")
+        .attr("d",this.locSymbol(0.5))
             .on("click", function(d) {
                 console.log(d);
             })
             .on('mouseover', function(d) {
-                var title = 'Route: ' + d.routeTag + '<br>' + 'Direction: ' + d.dirTag;
+                var title = 'Route: ' + d.routeTag + '<br>' +
+                            'Id: ' + d.id + '<br>' +
+                            'Speed: ' + d.speedKmHr + ' km/h';
                 $(this).tooltip({
                     container: 'body',
                     placement: 'auto',
@@ -80,8 +123,13 @@ MapVis.prototype.updateVis = function(_fresh){
                     title: title
                 });
             });
-        //.on('mouseover', this.tip.show)
-        //.on('mouseout', this.tip.hide);
+
+    circleEnter
+        .append("path")
+        .attr("class", "veh_dir")
+        .attr("d", this.dirSymbol(0.65))
+        .style("fill", "#333");
+
     //this.picCircles.exit().transition().style('opacity', 0.1);
 
     this.map.on("viewreset", reset);
@@ -113,25 +161,17 @@ MapVis.prototype.updateVis = function(_fresh){
     function projectPoint(x, y) {
       var point = that.map.latLngToLayerPoint(new L.LatLng(y, x));
       this.stream.point(point.x, point.y);
-      //console.log([point.x, point.y]);
-      //return [point.x, point.y];
     }
 };
 
-MapVis.prototype.wrangleData= function(_filterFunc){
+MapVis.prototype.wrangleData= function(_fresh){
     var that = this;
-    //var filterFunc = _filterFunc ? _filterFunc : function(_) { return true; };
-    //console.log(filterFunc);
-
-    //this.displayData = this.data.filter( function(d) { return that.filterFunc(d.dirTag); });
-    //console.log("wrangling, displaydata length:", this.displayData.length);
-
+    if(_fresh) {
+    }
     this.updateVis();
 };
 
-
 MapVis.prototype.onDataChange = function(_data){
     this.data = _data;
-    //console.log("updating data, this.data length:", this.data.length, "filterFunc:", this.filterfunc);
     this.wrangleData();
 };
