@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>Viz-SFmuni</title>
+
+    <!-- Bootstrap Core CSS -->
+    <link href="css/bootstrap.css" rel="stylesheet">
+    <link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet/v0.7.7/leaflet.css" />
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="css/custom.css">
+    <style>
+        html, body, #mapVis {
+            height: 100%;
+        }
+        body {
+            font-size: 12px;
+        }
+        #mapVis {
+            position:fixed;
+            height:auto;
+            bottom:0;
+            top:0;
+            left:0;
+            right:0;
+            background-color: #333;
+            z-index: 1;
+        }
+        circle {
+            cursor: default;
+        }
+        /*svg {*/
+            /*position: relative;*/
+        /*}*/
+        #mapVis {
+            /*position: absolute;*/
+            /*height: 950px;*/
+            /*width: 100%;*/
+        }
+        path {
+            fill: #000;
+            fill-opacity: 0;
+            stroke: #fff;
+            stroke-width: 1px;
+            stroke-opacity:0;
+        }
+        #control {
+            overflow: auto;
+            z-index: 2; /*why the z-index in overlay doesn't work*/
+            padding: 10px;
+            background-color:rgba(100,100,100,0.65);
+        }
+        path:hover {
+            /*fill: brown;*/
+            /*fill-opacity: .7;*/
+        }
+        .vehicle circle{
+            opacity: 0.15;
+            fill: #ffff00;
+        }
+        .vehicle.selected circle{
+            fill: #00ffff;
+            opacity: 0.75;
+        }
+        .vehicle.hovered circle{
+            opacity: 0.9;
+        }
+
+        /* http://webdesign.tutsplus.com/articles/quick-tip-styling-scrollbars-to-match-your-ui-design--webdesign-9430*/
+        ::-webkit-scrollbar {
+            width: 10px;
+        }
+        ::-webkit-scrollbar-track {
+            background-color: rgba(0, 0, 0, 0.2);
+        }
+        ::-webkit-scrollbar-thumb {
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+        ::-webkit-scrollbar-button {
+            background-color: rgba(255, 255, 255, 0.15);
+        }
+        ::-webkit-scrollbar-corner {
+            background-color: black;
+        }
+    </style>
+
+    <!-- JS Libraries -->
+    <script type="text/javascript" src="libs/d3.js"></script>
+    <script type="text/javascript" src="libs/d3-tip.js"></script>
+    <script type="text/javascript" src="libs/queue.min.js"></script>
+    <script type="text/javascript" src="libs/jquery-2.1.4.js"></script>
+    <script type="text/javascript" src="libs/topojson.js"></script>
+    <script type="text/javascript" src="libs/bootstrap.js"></script>
+    <script type="text/javascript" src="libs/xmlToJson.js"></script>
+    <!--<script type="text/javascript" src="libs/tooltip.js"></script>-->
+
+    <script src="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.js"></script>
+    <script src='https://api.mapbox.com/mapbox.js/v2.2.3/mapbox.js'></script>
+    <!-- Custom JavaScript -->
+</head>
+<body>
+    <!-- Visualization Section -->
+    <div class="container-fluid" style="height:100%">
+        <div class="row" style="height:100%">
+            <div class="col-xs-3 col-md-2" id="control" style="height:100%">
+                <ul id="#routeCtrl">
+                    <h4>Routes</h4>
+                </ul>
+            </div>
+            <div class="col-xs-9 col-md-10" style="height:100%">
+                <div id="mapVis" > </div>
+            </div>
+        </div>
+    </div>
+    <script type="text/javascript" src="js/main.js"></script>
+    <script type="text/javascript" src="js/mapvis.js"></script>
+</body>
+</html>
